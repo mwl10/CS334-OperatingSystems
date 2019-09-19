@@ -1,0 +1,1 @@
+../run-tests.sh: line 12:  6486 Aborted                 (core dumped) ../my-zip tests/6.in
