@@ -1,0 +1,235 @@
+Part A Forking Questions:
+-------------------------
+
+1. How many processes are there, (including the original parent process and all
+subsequent children)? It may help to map things out on paper.
+
+There are 7 processes.
+
+2. How many times does the message `"I am child C"` get printed out? Which
+process(es) is/are the parent(s) of child(ren) C?
+
+The message "I am child C" gets printed out 3 times. The processes that are the parents of
+children C are the original parent, child A, and child B.
+
+3. Do all copies of `"I am child C"` get printed consecutively? Do they all
+terminate consecutively? Justify why or why not.
+
+All of the children C complete their execution before their direct parents as per the wait(0) imposed upon them. Relative to the order,
+there are 3 children C in total, one being a child of child A, one being a child of child B and the other being a child of the original parent.
+The direct C child of the original parent is not forked until after the child of child A, child A, child B, and child of child B are completed
+as per the (while wait(0) > 0) restriction that forces the original parent to wait until child A and B are complete and the wait(0) restriction
+that forces child A and B to wait for their children to finish to complete. So therefore, the 2 children C that are children of child A and
+child B will non-deterministically finish and the child C that is a child of the original parent will finish after these two.
+
+4. Which process prints the message `"Huh, I'm awake? Who am I?"`? How many
+processes are running when this message is printed? What are they?
+
+The original parent process prints the message. Once the child processes A and B have terminated, this message can be
+printed as per the (while(wait(0) > 0) implies that all of the parents direct children forked before this must be completed
+so that the wait(0) will return -1 and not the PID of the initial children that finish. The child of child A and the child of child B (children C)
+are also known to be completed as per the wait(0) that forces their parents (A & B) to wait until they're finished. All the other processes
+that this parent forks after the fact: the racing child, a separate child C have not yet been forked until after this message is printed. So
+thereby the only process that is running when the message is printed is the process that prints it: the original parent.
+
+5. How many times is `Race to the finish?` printed? Which processes print the
+message?
+
+Race to the finish is printed 1 time, and the original parent prints the message.
+
+6. How many times is the message `I'm done!` printed?
+
+5 times (all the processes print it except the racing child and the the original parent)
+
+7. What guarantees, if any, can be made about when a child C process finishes
+relative to the process that create it? How do you know?
+
+Child C always finishes before the process that creates it as its direct parent is always forced by wait(0) to wait for Child C to finish
+before it is able to.
+
+8. Is it possible to know which process will finish first? What about which
+process will finish last? If yes, explain what guarantees it. If no, specify
+which processes could finish first/last.
+
+So the two processes that will finish last non-deterministically will be the original parent and the racing child. Up until this point of the
+message race to the finish is printed (which is printed by the original parent only) the original parent is forced to wait until essentially
+all of the other processes are finished (the three children C, child A, and child B). After this race has started between the newly created
+racing child and the original parent via the Fork() call, they finish non-deterministically as neither is forced to wait for the other to finish by a wait(0)
+system call or anything like that and they just enter and if else statement to printf that they're finished and return.
+
+It is also non-deterministic in terms of which process finishes first. This brings up the same point as question 3 does in that the two children C that
+are children of child A and child B respectively finish non-deterministically. Child A and Child B are forced to by wait(0) for these two to finish and nothing
+definitive can be said about the time these two children C finish relative to one another. Also and once again, the original process is forced by while(wait(0) > 0)
+to wait for child A and child B and thereby these two children C to finish. The racing child and the third child C are non instantiated until after this loop so
+they and the original parent will finish after these two as well.
+
+
+Part B Timing Questions:
+------------------------
+
+1. Run your code a few times. Are your timing results exactly the same? Are they
+generally consistent?
+
+In taking the average over a million cycles of the system call, the range of the timing results
+output was about 390-410ns (in the Asprey lab). Even without the average mechanism, the timing results were relatively
+consistent in that their range was not unreasonably spread.
+
+
+2. What happens to your results when you increase the number of iterations? Why
+might this be?
+
+The more iterations, the more definitive of an average you get (less of a range) as the law of large numbers takes hold.
+So as the sample of iterations grows, the mean gets closer to the theoretical or actual warranted time the system is able to
+process the call in and in the cases
+that we get some obscurely long or short time, they just cancel each other out in the average.
+
+
+3. Try running your code on a machine in SP-309 and in Asprey. Do you observe
+any differences? Speculate wildly about the cause!
+
+So system calls are the interface between the user program and the kernel, so the program puts the arguments into registers,
+and then transitions into kernel mode to call the right kernel function w/ some overhead by the CPU switching to diff address space.
+If there was a means of avoiding this overhead and kernel space switch within the user program, the system call would obviously be faster.
+Also the processor time needed to complete the system call will matter and I'm sure that is the case for these differences at least in the difference
+between the asprey lab and SP-309.
+
+Asprey lab ~~ 400 ns
+My macbook ~~ 570 ns
+SP-309     ~~ 590 ns
+
+
+Part C Scheduler Questions
+--------------------------
+
+1. Assuming that all jobs enter at the same time in a SJF scheduler, what order
+will the jobs execute in? Calculate the turnaround time, and response time for
+each job.
+
+
+all jobs arrived at time Tarrival = 0, so
+Tturnaround = Tcompletion - Tarrival
+Tturnaround = Tcompletion - 0
+Tturnaround = Tcompletion
+
+Turnaround Time for SJF
+1. job 5        length = 1  Tcompletion = 1 = Tturnaround
+2. job 1        length = 5  Tcompletion = 1+5 = 6 = Tturnaround
+3. job 3        length = 7  Tcompletion = 1+5+7 = 13 = Tturnaround
+4. job 4        length = 8  Tcompletion = 1+5+7+8 = 21 = Tturnaround
+5. job 2        length = 9  Tcompletion = 1+5+7+8+9 = 30 = Tturnaround
+6. job 0        length = 10 Tcompletion = 1+5+7+8+9+10 = 40 = Tturnaround
+
+avg = 18.5
+
+--------------------------------------------------------------------------------
+Tarrival = 0
+Tresponse = Tfirstrun - Tarrival
+Tresponse = Tfirstrun - 0
+Tresponse = Tfirstrun
+
+Response Time for SJF
+1. job 5         length = 1  -> Tresponse = 0
+2. job 1         length = 5  -> Tresponse = 1
+3. job 3         length = 7  -> Tresponse = 5+1  = 6
+4. job 4         length = 8  -> Tresponse = 6+7  = 13
+5. job 2         length = 9  -> Tresponse = 13+8 = 21
+6. job 0         length = 10 -> Tresponse = 21+9 = 30
+
+avg = 11.8
+
+2. Now suppose that the same list of jobs is being scheduled by a FIFO
+scheduler, where the order of arrival corresponds to the order of the jobs in
+the list. Calculate the turnaround time and response time for each job.
+
+
+all jobs arrived at time (effectively) Tarrival = 0, so
+Tturnaround = Tcompletion - Tarrival
+Tturnaround = Tcompletion - 0
+Tturnaround = Tcompletion
+
+Turnaround Time for FIFO
+1. job 0        length = 10 -> 10
+2. job 1        length = 5  -> 10 + 5 = 15
+3. job 2        length = 9  -> 15 + 9 = 24
+4. job 3        length = 7  -> 24 + 7 = 31
+5. job 4        length = 8  -> 31 + 8 = 39
+6. job 5        length = 1  -> 39 + 1 = 40
+
+avg = 26.5
+
+----------------------------------------------------------------------------
+all jobs arrived at time (effectively) Tarrival = 0, so
+Tresponse = Tfirstrun - Tarrival
+Tresponse = Tfirstrun - 0
+Tresponse = Tfirstrun
+
+Response Time for FIFO
+1. job 0        length = 10 -> 0      = 0
+2. job 1        length = 5  -> 0 + 10 = 10
+3. job 2        length = 9  -> 10 + 5 = 15
+4. job 3        length = 7  -> 15 + 9 = 24
+5. job 4        length = 8  -> 24 + 7 = 31
+6. job 5        length = 1  -> 31 + 9 = 39
+
+avg = 19.8
+
+
+
+3. Finally, suppose the same jobs are being scheduled by a round-robin scheduler
+with a time quantum of 3 time units. Trace the execution of the jobs at each
+quanta and calculate the turnaround time and response time for each job. Assume
+the RR order is the same as the order in which the jobs are listed.
+
+Round 1
+1. job 0 runs for 3 seconds so it has 10-3 = 7 left                    t = 3
+2. job 1 runs for 3 seconds so it has 5-3  = 2 left                    t = 6
+3. job 2 runs for 3 seconds so it has 9-3  = 6 left                    t = 9
+4. job 3 runs for 3 seconds so it has 7-3  = 4 left                    t = 12
+5. job 4 runs for 3 seconds so it has 8-3  = 5 left                    t = 15
+6. job 5 runs for 1 second  so it has 1-1  = 0 left and it's complete  t = 16
+Round 2
+7.  job 0 runs for 3 seconds so it has 7-3  = 4 left                   t = 19
+8.  job 1 runs for 2 seconds so it has 2-2  = 0 left and it's complete t = 21
+9.  job 2 runs for 3 seconds so it has 6-3  = 3 left                   t = 24
+10. job 3 runs for 3 seconds so it has 4-3  = 1 left                   t = 27
+11. job 4 runs for 3 seconds so it has 5-3  = 2 left                   t = 30
+Round 3
+12. job 0 runs for 3 seconds so it has 4-3  = 1 left                   t = 33
+13. job 2 runs for 3 seconds so it has 3-3  = 0 left and it's complete t = 36
+14. job 3 runs for 1 second  so it has 1-1  = 0 left and it's complete t = 37
+15. job 4 runs for 2 seconds so it has 2-2  = 0 left and it's complete t = 39
+Round 4
+16. job 0 runs for 1 second  so it has 1-1  = 0 left and it's complete t = 40
+
+----------------------------------------------------------------------------------
+all jobs arrived at time (effectively) Tarrival = 0, so
+Tturnaround = Tcompletion - Tarrival
+Tturnaround = Tcompletion - 0
+Tturnaround = Tcompletion
+
+Turnaround Time
+1. job 0      =  40
+2. job 1      =  21
+3. job 2      =  36
+4. job 3      =  37
+5. job 4      =  39
+6. job 5      =  16
+
+avg = 31.5
+
+----------------------------------------------------------------------------------
+all jobs arrived at time (effectively) Tarrival = 0, so
+Tresponse = Tfirstrun - Tarrival
+Tresponse = Tfirstrun - 0
+Tresponse = Tfirstrun
+
+
+Response Time
+1. job 0       =  0
+2. job 1       =  3
+3. job 2       =  6
+4. job 3       =  9
+5. job 4       =  12
+6. job 5       =  15
+
+avg = 7.5
