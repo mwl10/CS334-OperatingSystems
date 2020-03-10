@@ -1,6 +1,6 @@
 # CS334-OperatingSystems Course Labs and Assignments
 
-# Threading Lab: 
+## Threading Lab: 
 
 In this lab you will get practice with locks, condition variables, and the pthread library by writing two multi-threaded programs.
 
